@@ -8,6 +8,8 @@ Before running the ansible playbook it is necesary to create a new virtual netwo
 # Configuration of the route virtual network
 Create a file called casa.xml with the following text:
 
+```xml
+
 <network connections='1'>
   <name>casa</name>
   <uuid>4c8e54b3-0b8a-4803-81e9-19e9b5c14533</uuid>
@@ -23,6 +25,7 @@ Create a file called casa.xml with the following text:
     </dhcp>
   </ip>
 </network>
+```
 
 ## Define the specification 
 Using *virsh* (a libvirt utility)
