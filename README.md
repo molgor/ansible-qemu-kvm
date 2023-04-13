@@ -2,52 +2,6 @@
 
 This is a forked and updated version originally crafted by [noahbailey /ansible-qemu-kvm](https://github.com/noahbailey/ansible-qemu-kvm) to work with Ubuntu 22.04. 
 
-# Preparations in the Host
-Before running the ansible playbook it is necesary to create a new virtual network, currently this needs to be done by hand.
-
-# Configuration of the route virtual network
-Create a file called casa.xml with the following text:
-
-```xml
-
-<network connections='1'>
-  <name>casa</name>
-  <forward dev='enp0s31f6' mode='route'>
-    <interface dev='enp0s31f6'/>
-  </forward>
-  <bridge name='virbr1' stp='on' delay='0'/>
-  <mac address='52:54:00:d8:b0:23'/>
-  <domain name='casa'/>
-  <ip address='192.168.200.1' netmask='255.255.255.0'>
-    <dhcp>
-      <range start='192.168.200.128' end='192.168.200.254'/>
-    </dhcp>
-  </ip>
-</network>
-```
-
-## Define the specification 
-Using *virsh* (a libvirt utility)
-```bash
-virsh net-define casa.xml
-```
-## Activate the network with:
-
-```bash
-virsh net-start casa
-```
-
-This automatically creates a bridged interface!
-
-
-## Enable the network in autostart mode:
-
-```bash
-virsh net-autostart casa
-```
-
-Now, it should be enough to create the new virtual machines.
-
 
 # Introduction
 Ansible role to provision virtual machines using the QEMU and KVM systems. 
@@ -136,3 +90,52 @@ When VMs are launched, they are given a small secondary disk image that includes
 
 
 Before running this, ensure that networking is correctly configured on the KVM hosts. 
+
+# Configuring the virtual network in the host (route mode) 
+Before running the ansible playbook it is necesary to create a new virtual network, currently this needs to be done by hand.
+
+## Configuration of the route virtual network
+Create a file called casa.xml with the following text:
+
+```xml
+
+<network connections='1'>
+  <name>casa</name>
+  <forward dev='enps' mode='route'>
+    <interface dev='enps'/>
+  </forward>
+  <bridge name='virbr1' stp='on' delay='0'/>
+  <mac address='52:54:00:d8:b0:23'/>
+  <domain name='casa'/>
+  <ip address='192.168.200.1' netmask='255.255.255.0'>
+    <dhcp>
+      <range start='192.168.200.128' end='192.168.200.254'/>
+    </dhcp>
+  </ip>
+</network>
+```
+Yo may need to change 'enps' for the actual name of your host ethernet interface.
+
+## Define the specification 
+Using *virsh* (a libvirt utility)
+```bash
+virsh net-define casa.xml
+```
+## Activate the network with:
+
+```bash
+virsh net-start casa
+```
+
+This automatically creates a bridged interface!
+
+
+## Enable the network in autostart mode:
+
+```bash
+virsh net-autostart casa
+```
+
+Now, it should be enough to create the new virtual machines.
+
+
