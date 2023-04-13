@@ -1,15 +1,19 @@
 ---
+# Find Ethernet device
+
+
 - name: KVM and QEMU System components
   apt:
     name:
       - qemu-kvm
       - libvirt-daemon-system
       - libvirt-clients
-      - python-libvirt
-      - python-lxml
+      - python3-libvirt
+      - python3-lxml
       - bridge-utils
       - cloud-image-utils
       - virtinst
+      - libosinfo-bin
 
 - name: Libvirtd systemd service
   service:
@@ -21,41 +25,42 @@
 - name: qemu images directory
   file:
     state: directory
-    path: /virt/images
+    path: /home/virt/images
 
-- name: Check Ubuntu 18.04 cloud image
+- name: Check Ubuntu 2022 cloud image
   uri:
-    url: https://cloud-images.ubuntu.com/bionic/current/bionic-server-cloudimg-amd64.img
+    url: https://cloud-images.ubuntu.com/jammy/current/jammy-server-cloudimg-amd64.img
     method: HEAD
   register: cloudimg_http_stat
   check_mode: false
 
 - name: Check local cloud image
   stat:
-    path: /virt/images/bionic-server-cloudimg-amd64.img
+    path: /home/virt/images/jammy-server-cloudimg-amd64.img
     get_checksum: false
   register: cloudimg_local_stat
 
-- name: Update Ubuntu 18.04 cloud image
+- name: Update Ubuntu 2022 cloud image
   get_url:
-    url: https://cloud-images.ubuntu.com/bionic/current/bionic-server-cloudimg-amd64.img
-    dest: /virt/images/bionic-server-cloudimg-amd64.img
+    url: https://cloud-images.ubuntu.com/jammy/current/jammy-server-cloudimg-amd64.img
+    dest: /home/virt/images/jammy-server-cloudimg-amd64.img
   when: not cloudimg_local_stat.stat.exists or
         cloudimg_local_stat.stat.size != cloudimg_http_stat.content_length
   register: cloudimg_local_updated
 
 - name: Convert cloud image qcow format
   shell:
-    chdir: /virt/images/
-    cmd: qemu-img convert -f qcow2 bionic-server-cloudimg-amd64.img bionic-server-cloudimg-amd64.qcow2
-    creates: /virt/images/bionic-server-cloudimg-amd64.qcow2
+    chdir: /home/virt/images/
+    cmd: qemu-img convert -f qcow2 jammy-server-cloudimg-amd64.img jammy-server-cloudimg-amd64.qcow2
+    creates: /home/virt/images/jammy-server-cloudimg-amd64.qcow2
   when: cloudimg_local_updated.changed|bool
 
 # VM Directory
 - name: Virtual machine directory
   file:
-    path: /virt/vms
+    path: /home/virt/vms
     state: directory
     owner: root
     group: root
     mode: 0755
+
