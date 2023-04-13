@@ -12,16 +12,15 @@ Create a file called casa.xml with the following text:
 
 <network connections='1'>
   <name>casa</name>
-  <uuid>4c8e54b3-0b8a-4803-81e9-19e9b5c14533</uuid>
   <forward dev='enp0s31f6' mode='route'>
     <interface dev='enp0s31f6'/>
   </forward>
   <bridge name='virbr1' stp='on' delay='0'/>
   <mac address='52:54:00:d8:b0:23'/>
   <domain name='casa'/>
-  <ip address='192.168.100.1' netmask='255.255.255.0'>
+  <ip address='192.168.200.1' netmask='255.255.255.0'>
     <dhcp>
-      <range start='192.168.100.128' end='192.168.100.254'/>
+      <range start='192.168.200.128' end='192.168.200.254'/>
     </dhcp>
   </ip>
 </network>
