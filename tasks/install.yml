@@ -1,5 +1,5 @@
 ---
-# Find Ethernet device
+# Prepare the host for virtualization and updating OS images.
 - name: KVM and QEMU System components
   apt:
     name:
@@ -19,39 +19,67 @@
     enabled: true
     state: started
 
-# Manage cloud image
+# Create the Qemu images directory
 - name: qemu images directory
   file:
     path: "{{ vm.data_root_path }}/images"
     state: directory
 
+## Download and update Linux images
+## First, Ubuntu
 - name: Check Ubuntu 2022 cloud image
   uri:
     url: https://cloud-images.ubuntu.com/jammy/current/jammy-server-cloudimg-amd64.img
     method: HEAD
-  register: cloudimg_http_stat
+  register: ubuntuimg_http_stat
   check_mode: false
 
-- name: Check local cloud image
+- name: Check local Ubuntu image
   stat:
     path: "{{ vm.data_root_path }}/images/jammy-server-cloudimg-amd64.img"
     get_checksum: false
-  register: cloudimg_local_stat
+  register: ubuntuimg_local_stat
 
 - name: Update Ubuntu 2022 cloud image
   get_url:
     url: https://cloud-images.ubuntu.com/jammy/current/jammy-server-cloudimg-amd64.img
     dest: "{{ vm.data_root_path }}/images/jammy-server-cloudimg-amd64.img"
-  when: not cloudimg_local_stat.stat.exists or
-        cloudimg_local_stat.stat.size != cloudimg_http_stat.content_length
-  register: cloudimg_local_updated
+  when: not ubuntuimg_local_stat.stat.exists or
+        ubuntuimg_local_stat.stat.size != ubuntuimg_http_stat.content_length
+  register: ubuntuimg_local_updated
 
+# Only for Ubuntu
 - name: Convert cloud image qcow format
   shell:
     chdir: "{{ vm.data_root_path }}/images/"
     cmd: qemu-img convert -f qcow2 jammy-server-cloudimg-amd64.img jammy-server-cloudimg-amd64.qcow2
     creates: "{{ vm.data_root_path }}/jammy-server-cloudimg-amd64.qcow2"
-  when: cloudimg_local_updated.changed|bool
+  when: ubuntuimg_local_updated.changed|bool
+
+
+## Download and update Debian
+- name: Check Debian 11 cloud image
+  uri:
+    url: https://cloud.debian.org/images/cloud/bullseye/latest/debian-11-genericcloud-arm64.qcow2
+    method: HEAD
+  register: debianimg_http_stat
+  check_mode: false
+
+
+- name: Check local Debian image
+  stat:
+    path: "{{ vm.data_root_path }}/images/ debian-11-genericcloud-arm64.qcow2"
+    get_checksum: false
+  register: debianimg_local_stat
+
+
+- name: Update Debian cloud image
+  get_url:
+    url: https://cloud.debian.org/images/cloud/bullseye/latest/debian-11-genericcloud-arm64.qcow2
+    dest: "{{ vm.data_root_path }}/images/ debian-11-genericcloud-arm64.qcow2"
+  when: not debianimg_local_stat.stat.exists or
+        debianimg_local_stat.stat.size != debianimg_http_stat.content_length
+  register: debianimg_local_updated
 
 # VM Directory
 - name: Virtual machine directory
