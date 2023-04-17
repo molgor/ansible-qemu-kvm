@@ -1,7 +1,5 @@
 ---
 # Find Ethernet device
-
-
 - name: KVM and QEMU System components
   apt:
     name:
@@ -24,8 +22,8 @@
 # Manage cloud image
 - name: qemu images directory
   file:
+    path: "{{ vm.data_root_path }}/images"
     state: directory
-    path: /home/virt/images
 
 - name: Check Ubuntu 2022 cloud image
   uri:
@@ -36,29 +34,29 @@
 
 - name: Check local cloud image
   stat:
-    path: /home/virt/images/jammy-server-cloudimg-amd64.img
+    path: "{{ vm.data_root_path }}/images/jammy-server-cloudimg-amd64.img"
     get_checksum: false
   register: cloudimg_local_stat
 
 - name: Update Ubuntu 2022 cloud image
   get_url:
     url: https://cloud-images.ubuntu.com/jammy/current/jammy-server-cloudimg-amd64.img
-    dest: /home/virt/images/jammy-server-cloudimg-amd64.img
+    dest: "{{ vm.data_root_path }}/images/jammy-server-cloudimg-amd64.img"
   when: not cloudimg_local_stat.stat.exists or
         cloudimg_local_stat.stat.size != cloudimg_http_stat.content_length
   register: cloudimg_local_updated
 
 - name: Convert cloud image qcow format
   shell:
-    chdir: /home/virt/images/
+    chdir: "{{ vm.data_root_path }}/images/"
     cmd: qemu-img convert -f qcow2 jammy-server-cloudimg-amd64.img jammy-server-cloudimg-amd64.qcow2
-    creates: /home/virt/images/jammy-server-cloudimg-amd64.qcow2
+    creates: "{{ vm.data_root_path }}/jammy-server-cloudimg-amd64.qcow2"
   when: cloudimg_local_updated.changed|bool
 
 # VM Directory
 - name: Virtual machine directory
   file:
-    path: /home/virt/vms
+    path: "{{ vm.data_root_path }}/vms"
     state: directory
     owner: root
     group: root

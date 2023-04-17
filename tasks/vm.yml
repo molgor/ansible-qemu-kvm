@@ -3,11 +3,11 @@
 - name: "{{ vm.name }} :: VM storage location "
   file:
     state: directory
-    path: /home/virt/vms/{{ vm.name }}
+    path: "{{ vm.data_root_path }}/vms/{{ vm.name }}"
 
 - name: "{{ vm.name }} :: copy-on-write image"
   stat:
-    path: /home/virt/vms/{{ vm.name }}/{{ vm.name }}.qcow2
+    path: "{{ vm.data_root_path}}/vms/{{ vm.name }}/{{ vm.name }}.qcow2"
     get_checksum: false
   register: vm_stat
 
@@ -15,33 +15,33 @@
 - name: "{{ vm.name }} :: cloud-config file"
   template:
     src: templates/cloud-config.yml.j2
-    dest: /home/virt/vms/{{ vm.name }}/cloud-config.yml
+    dest: "{{ vm.data_root_path}}/vms/{{ vm.name }}/cloud-config.yml"
   when: vm_stat.stat.exists == false
 
 - name: "{{ vm.name }} :: network metadata file"
   template:
     src: templates/network-config-v2.yml.j2
-    dest: /home/virt/vms/{{ vm.name }}/network-config-v2.yml
+    dest: "{{ vm.data_root_path}}/vms/{{ vm.name }}/network-config-v2.yml"
   when: vm_stat.stat.exists == false
 
 - name: "{{ vm.name }} :: cloud-config image "
   shell:
-    creates: /home/virt/vms/{{ vm.name }}/cloud-config.img
-    cmd: cloud-localds --network-config=/home/virt/vms/{{ vm.name }}/network-config-v2.yml /home/virt/vms/{{ vm.name }}/cloud-config.img /home/virt/vms/{{ vm.name }}/cloud-config.yml
+    creates: "{{ vm.data_root_path}}/vms/{{ vm.name }}/cloud-config.img"
+    cmd: cloud-localds --network-config={{ vm.data_root_path}}/vms/{{ vm.name }}/network-config-v2.yml {{ vm.data_root_path}}/vms/{{ vm.name }}/cloud-config.img {{ vm.data_root_path}}/vms/{{ vm.name }}/cloud-config.yml
   when: vm_stat.stat.exists == false
 
 
 # Configure and launch VM
 - name: "{{ vm.name }} :: Provision Virtual Machine disk"
   copy:
-    src: /home/virt/images/jammy-server-cloudimg-amd64.qcow2
-    dest: /home/virt/vms/{{ vm.name }}/{{ vm.name }}.qcow2
+    src: "{{ vm.data_root_path}}/images/jammy-server-cloudimg-amd64.qcow2"
+    dest: "{{ vm.data_root_path}}/vms/{{ vm.name }}/{{ vm.name }}.qcow2"
     remote_src: true
   when: vm_stat.stat.exists == false
 
 - name: "{{ vm.name }} :: Resize Virtual Machine disk"
   shell:
-    cmd: qemu-img resize /home/virt/vms/{{ vm.name }}/{{ vm.name }}.qcow2 {{ vm.disk|default('5G') }}
+    cmd: qemu-img resize {{ vm.data_root_path}}/vms/{{ vm.name }}/{{ vm.name }}.qcow2 {{ vm.disk|default('5G') }}
   when: vm_stat.stat.exists == false
 
 - name: "{{ vm.name }} :: Create virtual machine "
@@ -52,8 +52,8 @@
         --name {{ vm.name }}
         --memory {{ vm.mem|default('512') }}
         --vcpus  {{ vm.cpu|default('1') }}
-        --disk /home/virt/vms/{{ vm.name }}/{{ vm.name }}.qcow2,device=disk,bus=virtio
-        --disk /home/virt/vms/{{ vm.name }}/cloud-config.img,device=cdrom
+        --disk {{ vm.data_root_path}}/vms/{{ vm.name }}/{{ vm.name }}.qcow2,device=disk,bus=virtio
+        --disk {{ vm.data_root_path}}/vms/{{ vm.name }}/cloud-config.img,device=cdrom
         --os-type linux
         --os-variant ubuntu20.10
         --virt-type kvm
@@ -67,3 +67,4 @@
   virt:
     name: "{{ vm.name }}"
     autostart: true
+

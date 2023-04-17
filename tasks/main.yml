@@ -1,6 +1,10 @@
 ---
 - name: Set up KVM platform
   include_tasks: install.yml
+  loop: "{{ virtual_machines }}"
+  loop_control:
+    loop_var: vm
+
 
 - name: Configure Virtual Machines
   include_tasks: vm.yml

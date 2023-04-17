@@ -14,5 +14,6 @@ users:
   hashed_passwd: "{{ user.passwd }}"
   lock_passwd: false
   ssh_authorized_keys:
-  - "{{ user.pub_key }}" 
+  - "{{ user.pub_key }}"
+  - "{{ user.ansible_key }}"
 {% endfor %}
