@@ -25,61 +25,86 @@
     path: "{{ vm.data_root_path }}/images"
     state: directory
 
+- name: Define full Ubuntu name based
+  set_fact:
+    full_distro_name: jammy-server-cloudimg-amd64
+  when: "'ubuntu' in vm.linux_distro"
+
+
+- name: Define full Debian name
+  set_fact:
+    full_distro_name: debian-11-genericcloud-amd64
+  when: "'debian' in vm.linux_distro"
 ## Download and update Linux images
 ## First, Ubuntu
 - name: Check Ubuntu 2022 cloud image
   uri:
-    url: https://cloud-images.ubuntu.com/jammy/current/jammy-server-cloudimg-amd64.img
+    #url: https://cloud-images.ubuntu.com/jammy/current/jammy-server-cloudimg-amd64.img
+    url: https://cloud-images.ubuntu.com/jammy/current/{{ full_distro_name }}.img
     method: HEAD
   register: ubuntuimg_http_stat
   check_mode: false
+  when: "'ubuntu' in vm.linux_distro"
 
 - name: Check local Ubuntu image
   stat:
-    path: "{{ vm.data_root_path }}/images/jammy-server-cloudimg-amd64.img"
+    path: "{{ vm.data_root_path }}/images/{{ full_distro_name }}.img"
     get_checksum: false
   register: ubuntuimg_local_stat
+  #when: "'ubuntu' in vm.linux_distro"
 
 - name: Update Ubuntu 2022 cloud image
   get_url:
-    url: https://cloud-images.ubuntu.com/jammy/current/jammy-server-cloudimg-amd64.img
-    dest: "{{ vm.data_root_path }}/images/jammy-server-cloudimg-amd64.img"
-  when: not ubuntuimg_local_stat.stat.exists or
-        ubuntuimg_local_stat.stat.size != ubuntuimg_http_stat.content_length
+    url: https://cloud-images.ubuntu.com/jammy/current/{{ full_distro_name }}.img
+    dest: "{{ vm.data_root_path }}/images/{{ full_distro_name }}.img"
+
   register: ubuntuimg_local_updated
+  #when: (not ubuntuimg_local_stat.stat.exists or ubuntuimg_local_stat.stat.size != ubuntuimg_http_stat.content_length) and "'ubuntu' in vm.linux_distro"
+  when: "'ubuntu' in vm.linux_distro and ((not ubuntuimg_local_stat.stat.exists) or (ubuntuimg_local_stat.stat.size != ubuntuimg_http_stat.content_length))"
 
 # Only for Ubuntu
 - name: Convert cloud image qcow format
   shell:
     chdir: "{{ vm.data_root_path }}/images/"
-    cmd: qemu-img convert -f qcow2 jammy-server-cloudimg-amd64.img jammy-server-cloudimg-amd64.qcow2
-    creates: "{{ vm.data_root_path }}/jammy-server-cloudimg-amd64.qcow2"
-  when: ubuntuimg_local_updated.changed|bool
+    cmd: qemu-img convert -f qcow2 {{ full_distro_name }}.img {{ full_distro_name }}.qcow2
+    creates: "{{ vm.data_root_path }}/images/{{ full_distro_name }}.qcow2"
+  when: (ubuntuimg_local_updated.changed|bool) and "'ubuntu' in vm.linux_distro"
 
 
 ## Download and update Debian
 - name: Check Debian 11 cloud image
   uri:
-    url: https://cloud.debian.org/images/cloud/bullseye/latest/debian-11-genericcloud-arm64.qcow2
+    url: https://cloud.debian.org/images/cloud/bullseye/latest/{{ full_distro_name }}.qcow2
     method: HEAD
   register: debianimg_http_stat
   check_mode: false
+  when: "'debian' in vm.linux_distro"
 
 
 - name: Check local Debian image
   stat:
-    path: "{{ vm.data_root_path }}/images/ debian-11-genericcloud-arm64.qcow2"
+    path: "{{ vm.data_root_path }}/images/{{ full_distro_name }}.qcow2"
     get_checksum: false
   register: debianimg_local_stat
+  #when: "'debian' in vm.linux_distro"
 
 
 - name: Update Debian cloud image
   get_url:
-    url: https://cloud.debian.org/images/cloud/bullseye/latest/debian-11-genericcloud-arm64.qcow2
-    dest: "{{ vm.data_root_path }}/images/ debian-11-genericcloud-arm64.qcow2"
-  when: not debianimg_local_stat.stat.exists or
-        debianimg_local_stat.stat.size != debianimg_http_stat.content_length
+    url: https://cloud.debian.org/images/cloud/bullseye/latest/{{ full_distro_name }}.qcow2
+    dest: "{{ vm.data_root_path }}/images/{{ full_distro_name }}-original.qcow2"
   register: debianimg_local_updated
+  when: "'debian' in vm.linux_distro and ((not debianimg_local_stat.stat.exists) or (debianimg_local_stat.stat.size != debianimg_http_stat.content_length))"
+
+#
+- name: Copy qcow image for Debian
+  shell:
+    chdir: "{{ vm.data_root_path }}/images/"
+    cmd: qemu-img convert -f qcow2 {{ full_distro_name }}-original.qcow2 {{ full_distro_name}}.qcow2
+    creates: "{{ vm.data_root_path }}/{{ full_distro_name}}.qcow2"
+  when: (debianimg_local_updated.changed|bool) and "'debian' in vm.linux_distro"
+
+
 
 # VM Directory
 - name: Virtual machine directory
