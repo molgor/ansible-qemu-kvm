@@ -12,6 +12,7 @@
       - cloud-image-utils
       - virtinst
       - libosinfo-bin
+      - libguestfs-tools
 
 - name: Libvirtd systemd service
   service:
@@ -33,7 +34,9 @@
 
 - name: Define full Debian name
   set_fact:
-    full_distro_name: debian-11-genericcloud-amd64
+    full_distro_name: debian-11-generic-amd64
+    #full_distro_name: debian-11-genericcloud-amd64
+    #full_distro_name: debian-11-nocloud-amd64
   when: "'debian' in vm.linux_distro"
 ## Download and update Linux images
 ## First, Ubuntu
@@ -95,6 +98,14 @@
     dest: "{{ vm.data_root_path }}/images/{{ full_distro_name }}-original.qcow2"
   register: debianimg_local_updated
   when: "'debian' in vm.linux_distro and ((not debianimg_local_stat.stat.exists) or (debianimg_local_stat.stat.size != debianimg_http_stat.content_length))"
+
+#- name: Change default root password for user debian
+#  shell:
+#    chdir: "{{ vm.data_root_path }}/images/"
+#    cmd: virt-customize -a {{ full_distro_name }}-original.qcow2 --root-password password:debian
+#  when: (debianimg_local_updated.changed|bool) and "'debian' in vm.linux_distro"
+
+
 
 #
 - name: Copy qcow image for Debian
