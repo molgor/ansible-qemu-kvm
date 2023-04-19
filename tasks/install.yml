@@ -1,6 +1,7 @@
 ---
 # Prepare the host for virtualization and updating OS images.
-- name: KVM and QEMU System components
+- name: Install KVM and QEMU System components in Debian
+  when: "'debian' in ansible_distribution.lower()"
   apt:
     name:
       - qemu-kvm
@@ -13,6 +14,21 @@
       - virtinst
       - libosinfo-bin
       - libguestfs-tools
+
+
+- name: KVM and QEMU System components in Arch
+  when: "'arch' in ansible_distribution.lower()"
+  package:
+    name:
+      - libvirt
+      - libvirt-python
+      - python-lxml
+      - bridge-utils
+      - cloud-image-utils
+      - virt-install
+      - libosinfo
+      - libguestfs
+
 
 - name: Libvirtd systemd service
   service:
