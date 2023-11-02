@@ -1,0 +1,19 @@
+#cloud-config
+
+hostname: "{{ vm.name }}"
+fqdn: "{{ vm.net.domain }}"
+manage_etc_hosts: true
+
+users: 
+{% for user in users %}
+- name: "{{ user.name }}"
+  gecos: "{{ user.full_name }}"
+  sudo: ALL=(ALL) ALL
+  groups: [ sudo ]
+  shell: /bin/bash
+  hashed_passwd: "{{ user.passwd }}"
+  lock_passwd: false
+  ssh_authorized_keys:
+  - "{{ user.pub_key }}"
+  - "{{ user.ansible_key }}"
+{% endfor %}

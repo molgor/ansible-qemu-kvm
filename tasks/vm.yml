@@ -12,29 +12,43 @@
   register: vm_stat
 
 # Generate kick-off
-- name: "{{ vm.name }} :: cloud-config file"
+- name: "{{ vm.name }} :: cloud-config file for Ubuntu"
   template:
-    src: templates/cloud-config.yml.j2
+    src: templates/ubuntu-cloud-config.yml.j2
     dest: "{{ vm.data_root_path}}/vms/{{ vm.name }}/cloud-config.yml"
-  when: vm_stat.stat.exists == false
+  when: "vm_stat.stat.exists == false and 'ubuntu' in vm.linux_distro"
 
-- name: "{{ vm.name }} :: network metadata file"
+- name: "{{ vm.name }} :: cloud-config file for Debian"
   template:
-    src: templates/network-config-v2.yml.j2
-    dest: "{{ vm.data_root_path}}/vms/{{ vm.name }}/network-config-v2.yml"
-  when: vm_stat.stat.exists == false
+    src: templates/debian-cloud-config.yml.j2
+    dest: "{{ vm.data_root_path}}/vms/{{ vm.name }}/cloud-config.yml"
+  when: "vm_stat.stat.exists == false and 'debian' in vm.linux_distro"
 
-- name: "{{ vm.name }} :: cloud-config image "
+- name: "{{ vm.name }} :: network metadata Ubuntu file"
+  template:
+    src: templates/ubuntu-network-config-v2.yml.j2
+    dest: "{{ vm.data_root_path}}/vms/{{ vm.name }}/network-config-v2.yml"
+  when: "vm_stat.stat.exists == false and 'ubuntu' in vm.linux_distro"
+
+- name: "{{ vm.name }} :: network metadata Debian file"
+  template:
+    src: templates/debian-network-config-v2.yml.j2
+    dest: "{{ vm.data_root_path}}/vms/{{ vm.name }}/network-config-v2.yml"
+  when: "vm_stat.stat.exists == false and 'debian' in vm.linux_distro"
+
+
+- name: "{{ vm.name }} :: cloud-config image"
   shell:
     creates: "{{ vm.data_root_path}}/vms/{{ vm.name }}/cloud-config.img"
-    cmd: cloud-localds --network-config={{ vm.data_root_path}}/vms/{{ vm.name }}/network-config-v2.yml {{ vm.data_root_path}}/vms/{{ vm.name }}/cloud-config.img {{ vm.data_root_path}}/vms/{{ vm.name }}/cloud-config.yml
+    cmd: cloud-localds --network-config={{ vm.data_root_path }}/vms/{{ vm.name }}/network-config-v2.yml {{ vm.data_root_path }}/vms/{{ vm.name }}/cloud-config.img {{ vm.data_root_path}}/vms/{{ vm.name }}/cloud-config.yml
   when: vm_stat.stat.exists == false
 
 
 # Configure and launch VM
 - name: "{{ vm.name }} :: Provision Virtual Machine disk"
   copy:
-    src: "{{ vm.data_root_path}}/images/jammy-server-cloudimg-amd64.qcow2"
+#    src: "{{ vm.data_root_path}}/images/jammy-server-cloudimg-amd64.qcow2"
+    src: "{{ vm.data_root_path}}/images/{{ full_distro_name }}.qcow2"
     dest: "{{ vm.data_root_path}}/vms/{{ vm.name }}/{{ vm.name }}.qcow2"
     remote_src: true
   when: vm_stat.stat.exists == false
@@ -44,7 +58,7 @@
     cmd: qemu-img resize {{ vm.data_root_path}}/vms/{{ vm.name }}/{{ vm.name }}.qcow2 {{ vm.disk|default('5G') }}
   when: vm_stat.stat.exists == false
 
-- name: "{{ vm.name }} :: Create virtual machine "
+- name: "{{ vm.name }} :: Create virtual machine Ubuntu "
   shell:
     cmd: >-
         virt-install
@@ -55,12 +69,31 @@
         --disk {{ vm.data_root_path}}/vms/{{ vm.name }}/{{ vm.name }}.qcow2,device=disk,bus=virtio
         --disk {{ vm.data_root_path}}/vms/{{ vm.name }}/cloud-config.img,device=cdrom
         --os-type linux
-        --os-variant ubuntu20.10
+        --os-variant {{ vm.linux_distro }}
         --virt-type kvm
         --graphics none
         --network bridge={{ vm.bridge|default('default') }},model=virtio
         --import
-  when: vm_stat.stat.exists == false
+  when: "'ubuntu' in vm.linux_distro and vm_stat.stat.exists == false"
+
+
+- name: "{{ vm.name }} :: Create virtual machine Debian "
+  shell:
+    cmd: >-
+        virt-install
+        --noautoconsole
+        --name {{ vm.name }}
+        --memory {{ vm.mem|default('512') }}
+        --vcpus  {{ vm.cpu|default('1') }}
+        --disk {{ vm.data_root_path}}/vms/{{ vm.name }}/{{ vm.name }}.qcow2,device=disk,bus=virtio
+        --disk {{ vm.data_root_path}}/vms/{{ vm.name }}/cloud-config.img,device=cdrom
+        --os-type linux
+        --os-variant linux2020
+        --virt-type kvm
+        --graphics none
+        --network bridge={{ vm.bridge|default('default') }},model=virtio
+        --import
+  when: "'debian' in vm.linux_distro and vm_stat.stat.exists == false"
 
 # Set VM Autostartup
 - name: "{{ vm.name }} start with host startup"

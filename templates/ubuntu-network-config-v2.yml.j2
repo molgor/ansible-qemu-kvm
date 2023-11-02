@@ -1,0 +1,20 @@
+{% if vm.net is defined %}
+network:
+ version: 2
+ renderer: networkd
+ ethernets:
+  enp1s0:
+    addresses: [{{ vm.net.ip }}]
+    routes:
+      - to: default
+        via: {{ vm.net.gateway }}
+    nameservers:
+      addresses:  {{ vm.net.dns }}
+      search:     ["{{ vm.net.domain }}"]
+{% else %}
+network:
+ version: 2
+  ethernets:
+   enp1s0:
+     dhcp4: true
+{% endif %}

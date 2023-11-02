@@ -54,6 +54,8 @@ virtual_machines:
    mem: 1024
    disk: 10G
    bridge: virbr1
+   #linux_distro: ubuntu20.10
+   linux_distro: debian11
    net:
      ip: 192.168.200.254/24
      gateway: 192.168.200.1
@@ -62,6 +64,10 @@ virtual_machines:
        - 192.168.158.1
 
 ```
+
+The variable 'linux_distro' specifies the distribution to be installed. Currently these are supported:
+- ubuntu20.10 (Actually it will install Ubuntu 22.04)
+- debian11 Installs Debian 11
 
 This is a list of virtual machines that should be built. 
 
