@@ -53,33 +53,46 @@
   shell:
     chdir: "{{ vm.data_root_path }}/images/"
     cmd: qemu-img convert -f qcow2 jammy-server-cloudimg-amd64.img jammy-server-cloudimg-amd64.qcow2
-    creates: "{{ vm.data_root_path }}/jammy-server-cloudimg-amd64.qcow2"
+    creates: "{{ vm.data_root_path }}/images/jammy-server-cloudimg-amd64.qcow2"
   when: ubuntuimg_local_updated.changed|bool
 
 
 ## Download and update Debian
 - name: Check Debian 11 cloud image
   uri:
-    url: https://cloud.debian.org/images/cloud/bullseye/latest/debian-11-genericcloud-arm64.qcow2
+    url: https://cloud.debian.org/images/cloud/bullseye/latest/{{ vm.linux_distro }}.qcow2
     method: HEAD
   register: debianimg_http_stat
   check_mode: false
+  when: "'debian' in vm.linux_distro"
 
 
 - name: Check local Debian image
   stat:
-    path: "{{ vm.data_root_path }}/images/debian-11-genericcloud-arm64.qcow2"
+    path: "{{ vm.data_root_path }}/images/{{ vm.linux_distro }}.qcow2"
     get_checksum: false
   register: debianimg_local_stat
+  when: "'debian' in vm.linux_distro"
 
 
 - name: Update Debian cloud image
   get_url:
-    url: https://cloud.debian.org/images/cloud/bullseye/latest/debian-11-genericcloud-arm64.qcow2
-    dest: "{{ vm.data_root_path }}/images/debian-11-genericcloud-arm64.qcow2"
+    url: https://cloud.debian.org/images/cloud/bullseye/latest/{{ vm.linux_distro }}.qcow2
+    dest: "{{ vm.data_root_path }}/images/{{ vm.linux_distro }}.qcow2"
   when: not debianimg_local_stat.stat.exists or
         debianimg_local_stat.stat.size != debianimg_http_stat.content_length
   register: debianimg_local_updated
+  when: "'debian' in vm.linux_distro"
+
+#
+- name: Copy qcow image for Debian
+  shell:
+    chdir: "{{ vm.data_root_path }}/images/"
+    cmd: qemu-img convert -f qcow2 {{ vm.linux_distro }}.qcow2 {{ vm.linux_distro}}.qcow2
+    creates: "{{ vm.data_root_path }}/{{ vm.linux_distro}}.qcow2"
+  when: debianimg_local_updated.changed|bool and "'debian' in vm.linux_distro"
+
+
 
 # VM Directory
 - name: Virtual machine directory

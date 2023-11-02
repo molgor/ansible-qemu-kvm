@@ -1,6 +1,6 @@
 # ansible-qemu-kvm
 
-This is a forked and updated version originally crafted by [noahbailey /ansible-qemu-kvm](https://github.com/noahbailey/ansible-qemu-kvm) to work with Ubuntu 22.04. 
+This is a forked and updated version originally crafted by [noahbailey /ansible-qemu-kvm](https://github.com/noahbailey/ansible-qemu-kvm) to work with Ubuntu 22.04 and Debian 11. 
 
 
 # Introduction

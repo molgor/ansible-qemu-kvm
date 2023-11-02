@@ -1,0 +1,13 @@
+{% if vm.net is defined %}
+auto ens2
+iface ens2 inet static
+    address {{ vm.net.ip }}
+    netmask 255.255.255.0
+    gateway {{ vm.net.gateway }}
+    dns-nameservers {{ vm.net.dns }}
+    dns-search     "{{ vm.net.domain }}"
+
+{% else %}
+auto ens2
+iface ens2 inet dhcp
+{% endif %}
