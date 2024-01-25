@@ -120,7 +120,7 @@ Create a file called casa.xml with the following text:
   </ip>
 </network>
 ```
-Yo may need to change 'enps' for the actual name of your host ethernet interface.
+Yo may need to cha nge 'enps' for the actual name of your host ethernet interface.
 
 ## Define the specification 
 Using *virsh* (a libvirt utility)
@@ -144,4 +144,45 @@ virsh net-autostart casa
 
 Now, it should be enough to create the new virtual machines.
 
+## For editing the network do:
 
+``` bash
+virsh net-edit casa
+```
+
+## Port forwarding
+This is not available in the level of abstraction as virsh. So, we need to define a specific IPtables rule.
+
+We need to create a qemu hook file in: /etc/libvirt/hooks/qemu
+
+I found this information [here.](https://wiki.libvirt.org/Networking.html#Forwarding_Incoming_Connections)
+
+``` bash
+#!/bin/bash
+
+# IMPORTANT: Change the "VM NAME" string to match your actual VM Name.
+# In order to create rules to other VMs, just duplicate the below block and configure
+# it accordingly.
+if [ "${1}" = "VM NAME" ]; then
+
+   # Update the following variables to fit your setup
+   GUEST_IP=
+   GUEST_PORT=
+   HOST_PORT=
+
+   if [ "${2}" = "stopped" ] || [ "${2}" = "reconnect" ]; then
+    /sbin/iptables -D FORWARD -o virbr0 -p tcp -d $GUEST_IP --dport $GUEST_PORT -j ACCEPT
+    /sbin/iptables -t nat -D PREROUTING -p tcp --dport $HOST_PORT -j DNAT --to $GUEST_IP:$GUEST_PORT
+   fi
+   if [ "${2}" = "start" ] || [ "${2}" = "reconnect" ]; then
+    /sbin/iptables -I FORWARD -o virbr0 -p tcp -d $GUEST_IP --dport $GUEST_PORT -j ACCEPT
+    /sbin/iptables -t nat -I PREROUTING -p tcp --dport $HOST_PORT -j DNAT --to $GUEST_IP:$GUEST_PORT
+   fi
+fi
+```
+
+`
+
+
+## Important documentation
+The configuration for the network is located in: (roles/ansible-qemu-kvm/tasks/vm.yml)
