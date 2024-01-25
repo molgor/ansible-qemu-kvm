@@ -70,7 +70,7 @@
     path: "{{ vm.data_root_path }}/images/{{ full_distro_name }}.img"
     get_checksum: false
   register: ubuntuimg_local_stat
-  #when: "'ubuntu' in vm.linux_distro"
+  when: "'ubuntu' in vm.linux_distro"
 
 - name: Update Ubuntu 2022 cloud image
   get_url:
@@ -105,7 +105,7 @@
     path: "{{ vm.data_root_path }}/images/{{ full_distro_name }}.qcow2"
     get_checksum: false
   register: debianimg_local_stat
-  #when: "'debian' in vm.linux_distro"
+  when: "'debian' in vm.linux_distro"
 
 
 - name: Update Debian cloud image
